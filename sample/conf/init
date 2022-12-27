@@ -1,0 +1,138 @@
+#!/bin/ksh
+:
+: init sample
+:
+# pragma ident "@(#)ddk:2.0/new/sample/conf/init"
+#
+# Sample initialization script.
+#
+# The autoconfig command passes these arguments to this script:
+#
+#   -k KERNEL_FILE [-M MAJ_DEV] -C NUM_CARDS -D NUM_DEV [-S ADDR] ...
+#
+#   -k KERNEL_FILE  - absolute pathname of the kernel that was just created.
+#   -M MAJ_DEV      - major device number assigned to this driver.
+#   -C NUM_CARDS    - number of cards found in the system.
+#   -D NUM_DEV      - number of devices each card can handle.
+#   -S ADDR         - slot address of the card (there can be more than
+#		      one -S ADDR pair)
+#
+# This script displays explanatory messages on the screen.
+#
+
+#
+# Set the PATH variable to make certain all the commands in this
+# script are found.
+#
+
+PATH=/bin:/usr/bin:/etc:/usr/etc
+export PATH
+
+#
+# The name of the script is always argument 0, so the value of argument
+# 0 is assigned to the variable MYNAME.  MYNAME is used later to print
+# the name of the script when displaying messages to the user.
+#
+
+MYNAME="`basename $0`[init]"
+
+#
+# The first step in processing the arguments on the command line is to 
+# pass them to getopt(1) to see if their legal.
+#
+
+args=`getopt k:M:C:D:S: "$@"`
+if [ $? != 0 ]; then
+  echo "${MYNAME}: ** Error: illegal argument(s) found!"
+  exit 1
+fi
+
+#
+# The next step is to actually break the arguments up and place them in 
+# their own variables so they can be used later.
+#
+
+let addr_cnt=0
+let NUM_CARDS=0
+let NUM_DEV=0
+eval set - ${args}
+for i in "$@"; do
+  case $i in
+    k | -k ) KERNEL_FILE=$2;    shift 2;;
+    M | -M ) MAJ_DEV=$2;        shift 2;;
+    C | -C ) NUM_CARDS=$2;	shift 2;;
+    D | -D ) NUM_DEV=$2;        shift 2;;
+    S | -S ) ADDR[${addr_cnt}]=$2;
+             let addr_cnt=${addr_cnt}+1; shift 2;;
+        -- ) shift; break;;
+  esac
+done
+unset addr_cnt
+
+###
+###  execute CMD [ARGS ...]
+###
+###  This function is used to execute and check the status of each
+###  command as they are executed.
+###
+
+execute()
+{
+  set - $*
+  typeset __cmd="$*"
+
+  echo "${MYNAME}: executing command \"${__cmd}\""
+  eval ${__cmd}
+  if [ $? -ne 0 ]; then
+    echo "${MYNAME}: ** Error: command \"${__cmd}\" failed!"
+    exit 1
+  fi
+}
+
+#
+# Print out the arguments that have been received and make required the
+# device node(s).
+#
+
+echo "${MYNAME}: Here are the arguments received from autoconfig:"
+echo "${MYNAME}:   Name of the patched kernel .......: ${KERNEL_FILE}"
+echo "${MYNAME}:   Major Device Number ..............: ${MAJ_DEV}"
+if [ ${NUM_CARDS} -eq 0 ]; then
+echo "${MYNAME}:   ** No cards found **"
+else
+echo "${MYNAME}:   Number of cards found ............: ${NUM_CARDS}"
+echo "${MYNAME}:   Number of devices for each card ..: ${NUM_DEV}"
+echo "${MYNAME}:   Slot numbers of each card ........: ${ADDR[*]}"
+fi
+
+#
+# There are many ways to handle multiple-card support by a single
+# driver. The sample driver uses a minor device for each 'card.'
+# Notice that if any /dev/sample* files exist, they are removed.  This 
+# is because the files could have been created with the wrong maj/min 
+# numbers, so to be safe, they are created again with known values.
+#
+
+if [ -n "${MAJ_DEV}" -a ${NUM_CARDS} -gt 0 ]; then
+  let minor_num=0
+  while [ ${minor_num} -lt ${NUM_CARDS} ]; do
+    devfile=/dev/sample${minor_num}
+
+    execute rm -f ${devfile}
+    execute /etc/mknod ${devfile} c ${MAJ_DEV} ${minor_num}
+    execute chown bin ${devfile}
+    execute chgrp bin ${devfile}
+    execute chmod 0666 ${devfile}
+
+    let minor_num=${minor_num}+1
+  done
+else
+  echo "${MYNAME}: ** Error: Don't have enough info to make dev files!"
+  exit 1
+fi
+
+#
+# If everything went OK, exit with 0 status.
+#
+
+exit 0

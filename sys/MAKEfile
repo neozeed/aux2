@@ -1,0 +1,44 @@
+#
+# 	@(#)Copyright Apple Computer 1987	Version 1.27 of MAKEfile on 90/02/21 11:17:27 
+#
+# Makefile to call make file in psn...
+#
+SHELL=		/bin/sh
+PSN=		psn
+MAKEFILE=	MAKEfile
+DEST=		
+CD=		cd
+CP=		cp
+CHROOT=		chroot
+CHMOD=		chmod
+MODE=		u+x
+NEWUNIX=	/etc/newunix
+AUTOCONFIG=	/etc/autoconfig -u -I -o /unix -S /etc/startup -L /dev/null
+
+OBJECTS=	ae6 at_sig bnet_dr debugger nfs_dr slip svfs toolbox ufs
+MASTERS=	at_sig toolbox
+#
+# This is the list of autoconfigurable modules to be included in /unix.
+DEFAULTMODS=	at_sig svfs toolbox ufs snd appletalk bnet tc slots
+
+all:
+	$(CD) $(PSN) ; $(MAKE) -f $(MAKEFILE)
+	$(CP) $(PSN)/newunix $(DEST)/etc/config.d/newunix
+	#
+	$(CD) $(PSN)/boot.d ; $(CP) $(OBJECTS) $(DEST)/etc/install.d/boot.d
+	#
+	# Assumptions:
+	# 1)	All the /etc/*.d files are put in place on $(DEST) above
+	#	or earlier in the build process!!
+	# 2)	All of the support utilities, i.e., sh, autoconfig, ld, etc.,
+	#	are also already on $(DEST)!
+	# 3)	None of the modules in the default /unix (DEFAULTMODS)
+	#	have init.d scripts which make user queries.
+	# 4)	None of the modules in the default /unix (DEFAULTMODS)
+	#	have slot devices associated with them (no loadfile yet).
+	$(CHMOD) $(MODE) $(DEST)/etc/install.d/*
+	$(CHMOD) $(MODE) $(DEST)/etc/install.d/init.d/*
+	$(CHROOT) $(DEST) $(NEWUNIX) $(DEFAULTMODS) < newunixinput
+	$(CHROOT) $(DEST) $(AUTOCONFIG)
+	$(CP) $(DEST)/unix $(DEST)/newunix
+	/bin/echo "/unix\c" > $(DEST)/nextunix

@@ -1,0 +1,80 @@
+#!/bin/ksh
+:
+: uninstall sample
+:
+# pragma ident "@(#)ddk:2.0/new/sample/conf/uninstall"
+# 
+# Sample uninstall script
+#
+# This script is executed directly by the newunix(1M) command or
+# indirectly by the newconfig(1M) command. The uninstall script can
+# include interaction with the user.
+#
+# Things an uninstall script should do:
+#
+#   - Remove your driver's config files from the proper directories:
+#
+#       remove the 'init' script, if any, from /etc/init.d
+#       remove the 'startup' script, if any, /etc/startup.d
+#       remove the 'object' file from /etc/boot.d
+#       remove the 'master' file from /etc/master.d
+#
+#   - Restore to their prior condition any files that install,
+#     initialiazation, or startup script may modified, such as 
+#     permissions, ownerships, and location.
+#
+# If your driver did not require special installation, you may not need
+# an uninstall script and you can use the default uninstall script 
+# instead.
+#
+
+#
+# Set the PATH variable to make certain all the commands in this
+# script are found.
+#
+
+PATH=/bin:/usr/bin:/etc:/usr/etc
+export PATH
+
+#
+# The name of the script is always argument 0, so the value of argument
+# 0 is assigned to the variable MYNAME.  MYNAME is used later to print
+# the name of the script when displaying messages to the user.
+#
+
+MYNAME="`basename $0`[uninstall]"
+
+###
+###  execute CMD [ARGS ...]
+###
+###  Using this function makes it easier to check the status of each
+###  command it is executed.
+###
+
+execute()
+{
+  set - $*
+  typeset __cmd="$*"
+
+  echo "${MYNAME}: executing command \"${__cmd}\""
+  eval ${__cmd}
+  if [ $? -ne 0 ]; then
+    echo "${MYNAME}: ** Error: command \"${__cmd}\" failed!"
+    exit 1
+  fi
+}
+
+#
+# The default uninstall command does everything except
+# remove the device files created by the initialization script, so call
+# the default uninstall script and then remove the device files.
+#
+
+/etc/uninstall.d/uninstall sample
+execute rm -f /dev/sample*
+
+#
+# If everything went OK, exit with 0 status.
+#
+
+exit 0

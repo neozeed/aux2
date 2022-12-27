@@ -1,0 +1,36 @@
+# pragma ident "@(#)ddk:2.0/sample/README"
+
+Dear Developer:
+
+  This sample driver may be modified, given away, sold or whatever as long
+  as any Apple Computer, Inc. copyright notices remain intact and that the
+  modified driver is intended for an A/UX-licensed user.
+
+The contents of this directory:
+
+  Makefile		Builds, Installs and Configures the whole thing.
+  Makefile.Deps		Contains the 'make' dependency information for sample.
+  README		This file.
+  sample.c		The sample driver.  Play with it and have fun!
+  conf			Configuration files are stored here.
+    hw_slots.c		Special program to figure out active hardware slots.
+    conf/init		Module Initialization script.
+    conf/install	Module Installation script.
+    conf/master		Module Master file.
+    conf/startup	Module Startup script.
+    conf/uninstall	Module Un-Install script.
+
+This sample driver doesn't require a hardware board in order to work, but if
+you do decide to use a board with this driver, you WILL need to make some
+changes (the driver can't possibly know how your board works!).
+Because this driver is configured as a "slots" driver (so you can see the
+process of installing it), we have to build a 'loadfile' with the slot
+information for each board (or pseudo-board as is our case) so that the
+autoconfig command will load in our driver; this is done for you automatically.
+
+You can compile the driver as a normal user, but to install the configuration
+files needed by newunix(1M) command and to do the autoconfiguration with the
+autoconfig(1M) command will require that you become root (super-user).
+
+This sample driver is an exact copy of the sample driver listed in the
+"Building A/UX Device Driver" book, Chapter 14.  Enjoy!

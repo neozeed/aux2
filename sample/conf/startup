@@ -1,0 +1,106 @@
+#!/bin/ksh
+:
+: startup sample
+:
+# pragma ident "@(#)ddk:2.0/new/sample/conf/startup"
+#
+# These arguments are passed to this script:
+#
+#   -i [-M MAJ_DEV] -C NUM_CARDS -D NUM_DEV [-S ADDR] ...
+#
+#   -i              - this flag is passed only by newconfig. if present, you
+#		      can ask the user configuration questions.
+#   -M MAJ_DEV      - major device number assigned to this driver.
+#   -C NUM_CARDS    - number of cards found in the system.
+#   -D NUM_DEV      - number of devices each card can handle.
+#   -S ADDR         - slot address of the card (there can be more than
+#		      one -S ADDR pair)
+
+#
+# Set the PATH variable to make certain all the commands in this
+# script are found.
+#
+
+PATH=/bin:/usr/bin:/etc:/usr/etc
+export PATH
+
+#
+# The name of the script is always argument 0, so the value of argument
+# 0 is assigned to the variable MYNAME.  MYNAME is used later to print
+# the name of the script when displaying messages to the user.
+#
+
+MYNAME="`basename $0`[startup]"
+
+#
+# First step in processing thearguments on the command line is to pass them
+# to getopt(1) to see if their legal.
+#
+
+args=`getopt iM:C:D:S: "$@"`
+if [ $? != 0 ]; then
+  echo "${MYNAME}: ** Error: illegal argument(s) found!"
+  exit 1
+fi
+
+#
+# The next step is to actually break the arguments up and place them in their
+# own variables so they can be used later.
+#
+
+let addr_cnt=0
+let NUM_CARDS=0
+let NUM_DEV=0
+eval set - ${args}
+for i in "$@"; do
+  case $i in
+    i | -i ) iflag=$1;		shift;;
+    M | -M ) MAJ_DEV=$2;        shift 2;;
+    C | -C ) NUM_CARDS=$2;	shift 2;;
+    D | -D ) NUM_DEV=$2;        shift 2;;
+    S | -S ) ADDR[${addr_cnt}]=$2;
+             let addr_cnt=${addr_cnt}+1; shift 2;;
+        -- ) shift; break;;
+  esac
+done
+
+###
+###  execute CMD [ARGS ...]
+###
+###  This function is used to execute and check the status of each
+###  command as they are executed.
+###
+
+execute()
+{
+  set - $*
+  typeset __cmd="$*"
+
+  echo "${MYNAME}: executing command \"${__cmd}\""
+  eval ${__cmd}
+  if [ $? -ne 0 ]; then
+    echo "${MYNAME}: ** Error: command \"${__cmd}\" failed!"
+    exit 1
+  fi
+}
+
+#
+# For the sample driver, this script prints out the arguments received.
+#
+
+echo "${MYNAME}: Here's the arguments:"
+echo "${MYNAME}:   The iflag value ..................: ${iflag}"
+echo "${MYNAME}:   Major Device Number ..............: ${MAJ_DEV}"
+if [ ${NUM_CARDS} -eq 0 ]; then
+echo "${MYNAME}:   ** No cards found **"
+else
+echo "${MYNAME}:   Number of cards found ............: ${NUM_CARDS}"
+echo "${MYNAME}:   Number of devices for each card ..: ${NUM_DEV}"
+echo "${MYNAME}:   Slot numbers of each card ........: ${ADDR[*]}"
+fi
+
+#
+# If everything went OK, exit with 0 status.
+#
+
+exit 0

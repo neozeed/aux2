@@ -1,0 +1,54 @@
+	AUX Sound Manager Implementation Issues
+
+	- I needed to put the entire synth driver in the kernel for
+	  ASC access reasons. In the Mac OS, note number to frequency
+	  calculations are done in the synth module, which is now in
+	  the kernel. Because it is a bad idea to do FP stuff in the kernel,
+	  I had to the math calculations in the toolbox and pass the
+	  computed value as a parameter into the kernel driver.
+
+	- The math routines were written in assembly to interface
+	  with the SANE interface. I could not get the SANE traps
+	  to work from the AUX toolbox. To get around this, I 
+	  converted all the SANE calls to unix math library calls.
+
+	- There were about 1,000 lines of assembly code in the
+	  original SM files. As much of this as possible was converted
+	  to C-code. The rest had to be converted to
+	  the AUX assembler syntax, and much of the code had to
+	  be changed for our environment. One specific case is
+	  that the MPW assembler puts the C calling routine
+	  arguments on the stack in the opposite order that ours
+	  does. Anytime a C function called an assembly routine
+	  with two or more args, I had to reverse them on one end.
+	  To complicate things more, they did some tricks like
+	  calling an assembly routine with four args on the stack.
+	  The assembly routine then stripped the last arg off the
+	  stack and used it as a jump address to another routine.
+	  This works fine in their case where they could just replace
+	  the missing arg with the next arg (the return adrs) and 
+	  adjust the sp. Its a nightmare when the arg you want to
+	  pull off is at the other end of the stack, like ours.
+
+	- Since the AUX sound manager lives in two worlds, I had to 
+	  invent a fair number of new data structures and new com-
+	  munications paths so each side can easily keep track of
+	  what the other half is doing. This involved ioctl() commands
+	  and several signal mechanisms. The SM toolbox calls
+	  transfer information to SM routines in the kernel
+	  via the standard unix driver routines like open(), close(),
+	  etc.
+
+	- Compiler syntax caused some serious frustration. In one case,
+	  I missed a line in porting that defined an external function
+	  at the start of a source file. The Mac C compiler uses the args
+	  in the external function definition. Our doesn't. When I over-
+	  looked this, our compiler did not complain at all. What it did
+	  do was completely screw up the stack offsets to the variables
+	  in the next function. This one took a while to track down. I
+	  knew that the stack was screwed up, but looked at a million other
+	  things before I isolated that error. Just something to be aware
+	  of when porting new synths.
+
+
+	Rob Smith

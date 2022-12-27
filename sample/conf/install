@@ -1,0 +1,73 @@
+#!/bin/ksh
+:
+: install sample
+:
+# pragma ident "@(#)ddk:2.0/new/sample/conf/install"
+#
+# Sample install script
+#
+# This script is executed directly by the newunix(1M) command or
+# indirectly by the newconfig(1M) command. The install script can
+# include interaction with the user.
+#
+# Things you should do here are:
+#
+#   - Copy your driver's config files to the proper directories:
+#
+#       copy the 'init' script, if any, into the directory /etc/init.d
+#       copy the 'startup' script, if any, into directory /etc/startup.d
+#       copy the 'object' file, if any,  into directory /etc/boot.d
+#       copy the 'master' file into directory /etc/master.d
+#
+#   - Install or uninstall other drivers that you may need or don't need.
+#
+#   - Create or modify any files that the driver may need, or change the
+#     permissions, ownerships, location, etc. of the file(s).
+#
+# Set the PATH variable to make certain all the commands in this
+# script are found.
+#
+
+PATH=/bin:/usr/bin:/etc:/usr/etc
+export PATH
+
+#
+# The name of the script is always argument 0, so the value of argument
+# 0 is assigned to the variable MYNAME.  MYNAME is used later to print
+# the name of the script when displaying messages to the user.
+#
+
+MYNAME="`basename $0`[install]"
+
+###  
+###  execute CMD [ARGS ...]
+###
+###  This function is used to execute and check the status of each
+###  command as they are executed.
+###  
+
+execute()
+{
+  set - $*
+  typeset __cmd="$*"
+
+  echo "${MYNAME}: executing command \"${__cmd}\""
+  eval ${__cmd}
+  if [ $? -ne 0 ]; then
+    echo "${MYNAME}: ** Error: command \"${__cmd}\" failed!"
+    exit 1
+  fi
+}
+
+#
+# The default install script does everything necessary for the sample
+# driver, so this install script calls it.
+# 
+
+/etc/install.d/install sample
+
+#
+# If everything went OK, exit with 0 status.
+#
+
+exit 0 

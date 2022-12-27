@@ -1,0 +1,4 @@
+# pragma ident "@(#)ddk:2.0/new/sample/conf/master"
+
+id %BOARD_ID% %BOARD_VERNUM%
+acvs    1       sample_ 	-       1       1

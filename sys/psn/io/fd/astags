@@ -1,0 +1,19 @@
+:
+# @(#)astags  {Apple version 1.1 89/08/15 12:10:58}
+
+awk '
+	BEGIN { textseg = 0 }
+
+	$1 == "text" && NF == 1 {		# find "text" directive
+	    textseg = 1;
+	}
+
+	$1 == "data" && NF == 1 {		# find "data" directive
+	    textseg = 0;
+	}
+
+	$1 == "global" && textseg == 1 {
+	    printf("%s\t%s\t%?^%s:?\n",$2,FILENAME,$2);
+	}
+    ' $*	| \
+    sort - tags -o tags
